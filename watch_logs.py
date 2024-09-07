@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 from parsers import PARSERS
 
 
+# Channel topic to set
+TOPIC = "Listening to logs! (Rock music :notes:)"
+
 async def watch_file(app: AsyncApp, fname: str, channel_id: str, delay: int, parser: Callable[[str], str]):
     """Start a loop to watch and send a message for new lines in a log file."""
     # Open the file
@@ -44,6 +47,30 @@ async def watch_file(app: AsyncApp, fname: str, channel_id: str, delay: int, par
 async def check_channel(app: AsyncApp, channel_id: str):
     """Check if a channel exists (or if the bot has access to it), and if not creates one"""
     api_result = await app.client.conversations_list()
+    for channel in api_result["channels"]:
+        if channel["id"] == channel_id or channel["name"] == channel_id.replace("#", ""):
+            # Valid channel
+            api_result = await app.client.conversations_join(
+                channel=channel["id"],
+            )
+            if api_result["channel"]["topic"]["value"] != TOPIC:
+                logger.info(f"Updated channel #{channel["name"]} topic")
+                api_result = await app.client.conversations_setTopic(
+                    channel=channel["id"],
+                    topic=TOPIC
+                )
+            return
+    # No channel exists. Make one
+    api_result = await app.client.conversations_create(
+        name=channel_id
+    )
+    api_result = await app.client.conversations_join(
+        channel=api_result["channel"]["id"],
+    )
+    api_result = await app.client.conversations_setTopic(
+        channel=api_result["channel"]["id"],
+        topic="Listening to logs! (Rock music :notes:)"
+    )
     print(api_result)
 
 
@@ -72,6 +99,10 @@ async def setup_tasks(app: AsyncApp, config: dict):
 
         # install the task
         logger.info(f"Installing task '{task_name}' to watch '{task['logfile']}'")
+        api_result = await app.client.chat_postMessage(
+            channel=task["channel"],
+            text=f":open_file_folder: Subscribed to logs from `{task['logfile']}`"
+        )
         asyncio.ensure_future(
             watch_file(
                 app=app,
