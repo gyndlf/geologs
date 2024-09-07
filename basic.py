@@ -19,6 +19,25 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 
 app = App(token=os.environ.get("SLACK_BOT_TOKEN"))
 
+# async def ack_check_command(body, ack):
+#     text = body.get("text")
+#     if text is None or len(text) == 0:
+#         await ack(f":x: Usage: /check [service]")
+#     else:
+#         await ack(f"Accepted! (task: {body['text']})")
+#
+#
+# async def check_health(respond, body):
+#     await asyncio.sleep(8)
+#     await respond(f"Healthy!! (task: {body['text']})")
+#
+#
+# app.command("/check")(
+#     # ack() is still called within 3 seconds
+#     ack=ack_check_command,
+#     # Lazy function is responsible for processing the event
+#     lazy=[check_health]
+# )
 
 # Listens to incoming messages that contain "hello"
 @app.message("hello")

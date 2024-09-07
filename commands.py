@@ -26,49 +26,44 @@ async def _run_cmd(*args, stdin='', code_block=False):
     return stdout.decode('utf-8')
 
 
-async def uptime() -> str:
-    """Run `uptime` on the server."""
+async def uptime(*args) -> str:
+    """Get server uptime"""
     return await _run_cmd('uptime')
 
 
-async def help() -> str:
-    """Return simple help"""
-    return "Available commands: " + ", ".join([f"`{c}`" for c in COMMANDS.keys()])
-
-
-async def disk() -> str:
-    """Return information about disk usage."""
+async def disk(*args) -> str:
+    """Return information about disk usage"""
     return await _run_cmd('df', '-h', '/', code_block=True)
 
 
-async def proc() -> str:
-    """Return the top 5 processes by CPU utilisation."""
+async def proc(*args) -> str:
+    """Return the top 5 processes by CPU utilisation"""
     return await _run_cmd('ps', 'aux', '--sort=-pcpu', '|', 'head', '-n 6')
 
 
-async def ping(ip: str = "1.1.1.1") -> str:
-    """Do a few pings to determine network speed."""
+async def ping(*args) -> str:
+    """Do a few pings to determine network speed"""
+    ip = args[0] if len(args) > 0 else "1.1.1.1"
     return await _run_cmd('ping', '-c 4', ip, code_block=True)
 
 
-async def logins() -> str:
-    """List the last 10 logins (or terminal sessions)."""
+async def logins(*args) -> str:
+    """List the last 10 logins (or terminal sessions)"""
     return await _run_cmd('head', stdin=await _run_cmd('last'), code_block=True)
 
 
-async def ip() -> str:
-    """Get the host ip"""
+async def ip(*args) -> str:
+    """Get the host external ip"""
     return await _run_cmd('curl', '-4sS', 'http://checkip.amazonaws.com')
 
-async def throws() -> str:
-    """Always throws an error."""
+
+async def throws(*args) -> str:
+    """Always throws an error"""
     return await _run_cmd('nonexistent')
 
 
-
-COMMANDS = {
+SYSTEM_COMMANDS = {
     "uptime": uptime,
-    "help": help,
     "disk": disk,
     "proc": proc,
     "ping": ping,
@@ -80,7 +75,6 @@ COMMANDS = {
 if __name__ == "__main__":
     async def main():
         print(await uptime())
-        #print(await ping())
         print(await ip())
-        #print(await proc())
+        #print(await ping("8.8.8.8"))
     asyncio.run(main())

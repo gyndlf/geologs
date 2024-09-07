@@ -16,74 +16,65 @@ import tomllib
 from slack_bolt.app.async_app import AsyncApp
 from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
 import asyncio
-from typing import Callable
 
-import parsers
-from commands import COMMANDS
+# Local imports
+import watch_logs
+from commands import SYSTEM_COMMANDS
 
 app = AsyncApp(token=os.environ["SLACK_BOT_TOKEN"], process_before_response=True)
 
+## Bot commands
 
-# async def ack_check_command(body, ack):
-#     text = body.get("text")
-#     if text is None or len(text) == 0:
-#         await ack(f":x: Usage: /check [service]")
-#     else:
-#         await ack(f"Accepted! (task: {body['text']})")
-#
-#
-# async def check_health(respond, body):
-#     await asyncio.sleep(8)
-#     await respond(f"Healthy!! (task: {body['text']})")
-#
-#
-# app.command("/check")(
-#     # ack() is still called within 3 seconds
-#     ack=ack_check_command,
-#     # Lazy function is responsible for processing the event
-#     lazy=[check_health]
-# )
+logs_running = False
 
-
-async def watch_file(fname: str, channel_id: str, delay: int, parser: Callable[[str], str]):
-    """Start a loop to watch and send a message for new lines in a log file."""
-    # Open the file
-    file = open(fname, 'r')
-    st_results = os.stat(fname)  # move to the end
-    st_size = st_results[6]
-    file.seek(st_size)
-
-    while True:  # loop... but do it asynchronously
-        where = file.tell()
-        line = file.readline()
-        if not line:
-            await asyncio.sleep(delay)
-            file.seek(where)
+async def logs(*args):
+    """Process the logs command"""
+    if len(args) == 0:
+        if logs_running:
+            return ":white_check_mark: " + "Subcommands of `install` and `check``"
         else:
-            # Something new. Send a message
-            print(f"New line: {line}")
-            await app.client.chat_postMessage(
-                channel=channel_id,
-                text=parser(line),
-            )
+            return ":skull: " + "Subcommands of `install` and `check``"
+    elif args[0] == "install":
+        # Install the watchers
+        pass
 
 
-# on @rocky
-#@app.event("message")
+async def help(*args):
+    """Returns all available commands."""
+    msg = (":bulb: *Usage* @BOT [COMMAND] (args)\n_System commands_\n"
+           + "\n- ".join([f"`{c}`: {SYSTEM_COMMANDS[c].__doc__}" for c in SYSTEM_COMMANDS.keys()])
+           + "\n_Bot commands_\n"
+           + "\n- ".join([f"`{c}`: {BOT_COMMANDS[c].__doc__}" for c in BOT_COMMANDS.keys()])
+           )
+    return msg
+
+
+
+BOT_COMMANDS = {
+    "logs": logs,
+    "help": help,
+}
+
+
 @app.event("app_mention")
 async def handle_mentions(event, client, say):  # async function
     # Check if reacted (and so already has been processed)
-    # api_response = await client.reactions_get(
-    #     channel=event["channel"],
-    #     timestamp=event["ts"]
-    # )
-    # if "reactions" in api_response["message"].keys():
-    #     logger.info(f"Already responded to mention: {event["text"]}")
-    #     return
+    api_response = await client.reactions_get(
+        channel=event["channel"],
+        timestamp=event["ts"]
+    )
+    if "reactions" in api_response["message"].keys():
+        logger.info(f"Already responded to mention: {event["text"]}")
+        return
 
     logger.info(f"Bot mentioned: {event["text"]}")
     try:
-        cmd = event["text"].split(" ")[1]
+        cmd_raw = event["text"].split(" ")
+        cmd = cmd_raw[1]
+        if len(cmd_raw) > 2:
+            cmds = cmd_raw[2:]
+        else:
+            cmds = []
     except IndexError:  # you just pinged me
         api_response = await client.reactions_add(
             channel=event["channel"],
@@ -92,73 +83,45 @@ async def handle_mentions(event, client, say):  # async function
         )
         return
 
-    if cmd not in COMMANDS:  # unknown command
-        print(cmd)
+    if (cmd not in SYSTEM_COMMANDS) and (cmd not in BOT_COMMANDS):  # unknown command
+        logger.info(f"Unknown command {cmd}")
         api_response = await client.reactions_add(
             channel=event["channel"],
             timestamp=event["ts"],
             name="thinking_face",
         )
-        await say("Unknown command. " + await COMMANDS["help"]())
+        await say("Unknown command. " + "Available commands are " + ", ".join(
+            [f"`{c}`" for c in SYSTEM_COMMANDS.keys()] + [f"`{c}`" for c in BOT_COMMANDS.keys()]
+        ))
         return
 
+    # Command accepted. Run it
     api_response = await client.reactions_add(
         channel=event["channel"],
         timestamp=event["ts"],
         name="thumbsup",
     )
-    # Run the command
-    try:
-        stdout = await COMMANDS[cmd]()
-    except (FileNotFoundError, RuntimeError) as error:
-        # There was an issue completing the command
-        api_response = await client.reactions_add(
-            channel=event["channel"],
-            timestamp=event["ts"],
-            name="x",
-        )
-        logger.error(error)
-        await say(":exclamation: Uh oh.```" + str(error) + "```")
-        return
-    await say(await COMMANDS[cmd]())
-
-
-def validate_task(task: dict) -> bool:
-    """Check that all the required information is given."""
-    for r in ["channel", "logfile", "delay", "parser"]:
-        if r not in task.keys():
-            raise KeyError(f"Missing required field '{r}'")
-    if task["parser"] not in parsers.PARSERS.keys():
-        raise KeyError(f"Unknown parser {task["parser"]}. Valid parsers are {parsers.PARSERS.keys()}.")
-    if not isinstance(task["delay"], int):
-        raise TypeError("Delay must be of type int.")
-    # Check file exists
-    if not os.path.exists(task["logfile"]):
-        raise FileNotFoundError(f"Could not find log file '{task['logfile']}'")
-    return True
-
-
-def setup_tasks(config: dict):
-    """Set up the tasks to watch the appropriate log files."""
-    tasks = config.keys()
-    for task_name in tasks:
-        task = config[task_name]
-        validate_task(task)
-
-        # install the task
-        logger.info(f"Installing task '{task_name}' to watch '{task['logfile']}'")
-        asyncio.ensure_future(
-            watch_file(
-                fname=task["logfile"],
-                channel_id=task["channel"],
-                delay=task["delay"],
-                parser=parsers.PARSERS[task["parser"]],
+    if cmd in SYSTEM_COMMANDS:  # System command
+        try:
+            stdout = await SYSTEM_COMMANDS[cmd](*cmds)
+        except (FileNotFoundError, RuntimeError) as error:
+            # There was an issue completing the command
+            api_response = await client.reactions_add(
+                channel=event["channel"],
+                timestamp=event["ts"],
+                name="x",
             )
-        )
+            logger.error(error)
+            await say(":exclamation: Uh oh.```" + str(error) + "```")
+            return
+        await say(stdout)
+
+    elif cmd in BOT_COMMANDS:  # Bot command
+        await say(await BOT_COMMANDS[cmd](*cmds))
 
 
 async def main():
-    setup_tasks(config)
+    #setup_tasks(config)
     handler = AsyncSocketModeHandler(app, os.environ["SLACK_APP_TOKEN"])
     await handler.start_async()
 
