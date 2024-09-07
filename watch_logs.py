@@ -37,7 +37,7 @@ async def watch_file(app: AsyncApp, fname: str, channel_id: str, delay: int, par
             file.seek(where)
         else:
             # Something new. Send a message
-            print(f"New line: {line}")
+            logger.info(f"Log {fname} updated, sending message")
             await app.client.chat_postMessage(
                 channel=channel_id,
                 text=parser(line),
@@ -80,7 +80,7 @@ async def validate_task(app: AsyncApp, task: dict) -> bool:
         if r not in task.keys():
             raise KeyError(f"Missing required field '{r}'")
     if task["parser"] not in PARSERS.keys():
-        raise KeyError(f"Unknown parser {task["parser"]}. Valid parsers are {parsers.PARSERS.keys()}.")
+        raise KeyError(f"Unknown parser {task["parser"]}. Valid parsers are {PARSERS.keys()}.")
     if not isinstance(task["delay"], int):
         raise TypeError("Delay must be of type int.")
     # Check file exists

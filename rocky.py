@@ -50,7 +50,6 @@ async def logs(*args):
         return "Unknown command. " + sub_cmds
 
 
-
 async def help(*args):
     """Returns all available commands."""
     msg = (":bulb: *Usage* @BOT [COMMAND] (args)\n_System commands_\n"
@@ -59,7 +58,6 @@ async def help(*args):
            + "\n- ".join([f"`{c}`: {BOT_COMMANDS[c].__doc__}" for c in BOT_COMMANDS.keys()])
            )
     return msg
-
 
 
 BOT_COMMANDS = {
