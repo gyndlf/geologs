@@ -19,6 +19,8 @@ async def _run_cmd(*args, stdin='', code_block=False):
         stdin=asyncio.subprocess.PIPE,
     )
     stdout, stderr = await proc.communicate(input=stdin.encode())
+    if stderr != b'':
+        raise RuntimeError(stderr.decode('utf-8'))
     if code_block:
         return "```\n" + stdout.decode('utf-8') + "```"
     return stdout.decode('utf-8')
@@ -26,7 +28,7 @@ async def _run_cmd(*args, stdin='', code_block=False):
 
 async def uptime() -> str:
     """Run `uptime` on the server."""
-    return await _run_cmd('uptime', "")
+    return await _run_cmd('uptime')
 
 
 async def help() -> str:
@@ -54,6 +56,16 @@ async def logins() -> str:
     return await _run_cmd('head', stdin=await _run_cmd('last'), code_block=True)
 
 
+async def ip() -> str:
+    """Get the host ip"""
+    return await _run_cmd('curl', '-4sS', 'http://checkip.amazonaws.com')
+
+async def throws() -> str:
+    """Always throws an error."""
+    return await _run_cmd('nonexistent')
+
+
+
 COMMANDS = {
     "uptime": uptime,
     "help": help,
@@ -61,10 +73,14 @@ COMMANDS = {
     "proc": proc,
     "ping": ping,
     "logins": logins,
+    "ip": ip,
+    "throws": throws,
 }
 
 if __name__ == "__main__":
     async def main():
         print(await uptime())
-        print(await ping())
+        #print(await ping())
+        print(await ip())
+        #print(await proc())
     asyncio.run(main())

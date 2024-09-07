@@ -73,18 +73,18 @@ async def watch_file(fname: str, channel_id: str, delay: int, parser: Callable[[
 @app.event("app_mention")
 async def handle_mentions(event, client, say):  # async function
     # Check if reacted (and so already has been processed)
-    api_response = await client.reactions_get(
-        channel=event["channel"],
-        timestamp=event["ts"]
-    )
-    if "reactions" in api_response["message"].keys():
-        logger.info(f"Already responded to mention: {event["text"]}")
-        return
+    # api_response = await client.reactions_get(
+    #     channel=event["channel"],
+    #     timestamp=event["ts"]
+    # )
+    # if "reactions" in api_response["message"].keys():
+    #     logger.info(f"Already responded to mention: {event["text"]}")
+    #     return
 
     logger.info(f"Bot mentioned: {event["text"]}")
     try:
         cmd = event["text"].split(" ")[1]
-    except IndexError: # you just pinged me
+    except IndexError:  # you just pinged me
         api_response = await client.reactions_add(
             channel=event["channel"],
             timestamp=event["ts"],
@@ -105,9 +105,21 @@ async def handle_mentions(event, client, say):  # async function
     api_response = await client.reactions_add(
         channel=event["channel"],
         timestamp=event["ts"],
-        name="white_check_mark",
+        name="thumbsup",
     )
     # Run the command
+    try:
+        stdout = await COMMANDS[cmd]()
+    except (FileNotFoundError, RuntimeError) as error:
+        # There was an issue completing the command
+        api_response = await client.reactions_add(
+            channel=event["channel"],
+            timestamp=event["ts"],
+            name="x",
+        )
+        logger.error(error)
+        await say(":exclamation: Uh oh.```" + str(error) + "```")
+        return
     await say(await COMMANDS[cmd]())
 
 
