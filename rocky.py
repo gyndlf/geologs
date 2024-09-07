@@ -8,7 +8,6 @@ Configure it to read log files for updates and broadcast messages.
 
 @author: james
 """
-
 import logging
 logging.basicConfig(level=logging.INFO)
 
@@ -20,19 +19,30 @@ import asyncio
 from typing import Callable
 
 import parsers
+from commands import COMMANDS
+
+app = AsyncApp(token=os.environ["SLACK_BOT_TOKEN"], process_before_response=True)
 
 
-app = AsyncApp(token=os.environ["SLACK_BOT_TOKEN"])
-
-
-async def run_offline_task():
-    while True:
-        channel_id = "#tephrite"  # you need to come up with your own logic to decide the channel to post messages
-        await app.client.chat_postMessage(
-            channel=channel_id,
-            text="Hi there!",
-        )
-        await asyncio.sleep(120)
+# async def ack_check_command(body, ack):
+#     text = body.get("text")
+#     if text is None or len(text) == 0:
+#         await ack(f":x: Usage: /check [service]")
+#     else:
+#         await ack(f"Accepted! (task: {body['text']})")
+#
+#
+# async def check_health(respond, body):
+#     await asyncio.sleep(8)
+#     await respond(f"Healthy!! (task: {body['text']})")
+#
+#
+# app.command("/check")(
+#     # ack() is still called within 3 seconds
+#     ack=ack_check_command,
+#     # Lazy function is responsible for processing the event
+#     lazy=[check_health]
+# )
 
 
 async def watch_file(fname: str, channel_id: str, delay: int, parser: Callable[[str], str]):
@@ -59,15 +69,46 @@ async def watch_file(fname: str, channel_id: str, delay: int, parser: Callable[[
 
 
 # on @rocky
-@app.event("message")
+#@app.event("message")
 @app.event("app_mention")
 async def handle_mentions(event, client, say):  # async function
+    # Check if reacted (and so already has been processed)
+    api_response = await client.reactions_get(
+        channel=event["channel"],
+        timestamp=event["ts"]
+    )
+    if "reactions" in api_response["message"].keys():
+        logger.info(f"Already responded to mention: {event["text"]}")
+        return
+
+    logger.info(f"Bot mentioned: {event["text"]}")
+    try:
+        cmd = event["text"].split(" ")[1]
+    except IndexError: # you just pinged me
+        api_response = await client.reactions_add(
+            channel=event["channel"],
+            timestamp=event["ts"],
+            name="eyes",
+        )
+        return
+
+    if cmd not in COMMANDS:  # unknown command
+        print(cmd)
+        api_response = await client.reactions_add(
+            channel=event["channel"],
+            timestamp=event["ts"],
+            name="thinking_face",
+        )
+        await say("Unknown command. " + await COMMANDS["help"]())
+        return
+
     api_response = await client.reactions_add(
         channel=event["channel"],
         timestamp=event["ts"],
-        name="eyes",
+        name="white_check_mark",
     )
-    await say("What's up?")
+    # Run the command
+    await say(await COMMANDS[cmd]())
 
 
 def validate_task(task: dict) -> bool:
@@ -79,11 +120,9 @@ def validate_task(task: dict) -> bool:
         raise KeyError(f"Unknown parser {task["parser"]}. Valid parsers are {parsers.PARSERS.keys()}.")
     if not isinstance(task["delay"], int):
         raise TypeError("Delay must be of type int.")
-
     # Check file exists
     if not os.path.exists(task["logfile"]):
         raise FileNotFoundError(f"Could not find log file '{task['logfile']}'")
-
     return True
 
 
