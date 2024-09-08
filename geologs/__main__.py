@@ -7,7 +7,7 @@ Run the bot
 @author: james
 """
 
-import os
+import sys
 
 
 try:
@@ -17,7 +17,11 @@ except ImportError:
 
 
 def main():
-    geologs.main("config.toml")
+    config_file = "config.toml"
+    for arg in sys.argv[1:]:
+        if arg.startswith("--conf="):
+            config_file = arg[len("--conf="):]
+    geologs.main(config_file)
 
 
 if __name__ == "__main__":

@@ -89,7 +89,7 @@ async def handle_mentions(event, client, say):  # async function
     except IndexError:
         cmd = ''
 
-    if cmd == '': # you just pinged me
+    if cmd == '':  # you just pinged me
         api_response = await client.reactions_add(
             channel=event["channel"],
             timestamp=event["ts"],
@@ -142,5 +142,6 @@ async def main_async():
 
 def main(config_file: str):
     global config
+    logger.info("Loading config file from %s", config_file)
     config = tomllib.load(open(config_file, "rb"))
     asyncio.run(main_async())

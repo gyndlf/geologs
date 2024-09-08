@@ -16,9 +16,10 @@ pip install geologs
 
 A new Slack application needs to be made for each server. Use `manifest.json` as a template for the required permissions.
 
-Then run the bot
+It is expected the API keys are given as environmental variables as `SLACK_BOT_TOKEN` and `SLACK_APP_TOKEN`.
+
 ```
-python -m geologs config.toml
+python -m geologs --conf=config.toml
 ```
 
 
