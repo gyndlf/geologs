@@ -2,3 +2,4 @@
 config.env
 dist/
 *.egg-info/
+upload.sh

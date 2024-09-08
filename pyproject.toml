@@ -8,7 +8,8 @@ authors = [
     {name = "gyndlf", email = "james@zingel.co.nz"},
 ]
 readme = "README.md"
-version = "0.0.2"
+version = "0.0.3"
+license = {text = "MIT"}
 keywords = ["slack", "log", "bot"]
 description = "Slack bot to watch log files and run basic server commands"
 dependencies = [
@@ -18,3 +19,6 @@ dependencies = [
 
 [project.scripts]
 cli-name = "rocky.__main__:main"
+
+[project.urls]
+repository = "https://github.com/gyndlf/geologs"

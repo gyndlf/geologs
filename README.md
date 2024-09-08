@@ -1,4 +1,5 @@
-![https://pypi.org/project/geologs](https://img.shields.io/pypi/v/geologs.svg)
+![https://pypi.org/project/geologs](https://img.shields.io/pypi/v/geologs.svg) ![https://pypi.org/project/geologs](https://img.shields.io/pypi/wheel/geologs) ![](https://img.shields.io/badge/certified-cool_project-blue)
+
 
 # Geologs - Slack Bot
 
@@ -13,5 +14,30 @@ Pull requests welcome.
 pip install geologs
 ``
 
-Configure `config.toml` to point to the log files of choice
+A new Slack application needs to be made for each server. Use `manifest.json` as a template for the required permissions.
+
+Then run the bot
+```
+python -m geologs config.toml
+```
+
+
+## Configuration
+Define the log files to listen to, delay in seconds between checking the file and an optional parser. 
+
+Available parsers can be found in `geologs/parsers.py` to format the logs in a pretty format.
+
+```toml
+[testing]
+channel = "#tephrite"
+logfile = "test.log"
+delay = 10
+parser = "basic"
+
+[test2]
+channel = "#rocks-are-cool"
+logfile = "test.log"
+delay = 5
+parser = "basic"
+```
 
