@@ -15,7 +15,7 @@ from slack_bolt.app.async_app import AsyncApp
 
 logger = logging.getLogger(__name__)
 
-from parsers import PARSERS
+from .parsers import PARSERS
 
 
 # Channel topic to set

@@ -10,6 +10,7 @@ Configure it to read log files for updates and broadcast messages.
 """
 import logging
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 import os
 import tomllib
@@ -18,8 +19,8 @@ from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
 import asyncio
 
 # Local imports
-import watch_logs
-from commands import SYSTEM_COMMANDS
+from . import watch_logs
+from .commands import SYSTEM_COMMANDS
 
 app = AsyncApp(token=os.environ["SLACK_BOT_TOKEN"], process_before_response=True)
 
@@ -130,13 +131,17 @@ async def handle_mentions(event, client, say):  # async function
         await say(await BOT_COMMANDS[cmd](*cmds))
 
 
-async def main():
+async def main_async():
     #setup_tasks(config)
     handler = AsyncSocketModeHandler(app, os.environ["SLACK_APP_TOKEN"])
     await handler.start_async()
 
 
+def main(config_file: str):
+    global config
+    config = tomllib.load(open(config_file, "rb"))
+    asyncio.run(main_async())
+
+
 if __name__ == "__main__":
-    logger = logging.getLogger(__name__)
-    config = tomllib.load(open("config.toml", "rb"))
-    asyncio.run(main())
+    main("../config.toml")
