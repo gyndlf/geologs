@@ -86,7 +86,10 @@ async def handle_mentions(event, client, say):  # async function
             cmds = cmd_raw[2:]
         else:
             cmds = []
-    except IndexError:  # you just pinged me
+    except IndexError:
+        cmd = ''
+
+    if cmd == '': # you just pinged me
         api_response = await client.reactions_add(
             channel=event["channel"],
             timestamp=event["ts"],
@@ -95,7 +98,7 @@ async def handle_mentions(event, client, say):  # async function
         return
 
     if (cmd not in SYSTEM_COMMANDS) and (cmd not in BOT_COMMANDS):  # unknown command
-        logger.info(f"Unknown command {cmd}")
+        logger.info(f"Unknown command '{cmd}'")
         api_response = await client.reactions_add(
             channel=event["channel"],
             timestamp=event["ts"],
@@ -141,7 +144,3 @@ def main(config_file: str):
     global config
     config = tomllib.load(open(config_file, "rb"))
     asyncio.run(main_async())
-
-
-if __name__ == "__main__":
-    main("../config.toml")

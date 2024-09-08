@@ -1,2 +1,4 @@
-.idea
+.idea/
 config.env
+dist/
+*.egg-info/
