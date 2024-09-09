@@ -75,10 +75,10 @@ async def handle_mentions(event, client, say):  # async function
         timestamp=event["ts"]
     )
     if "reactions" in api_response["message"].keys():
-        logger.info(f"Already responded to mention: {event["text"]}")
+        logger.info(f"Already responded to mention: {event['text']}")
         return
 
-    logger.info(f"Bot mentioned: {event["text"]}")
+    logger.info(f"Bot mentioned: {event['text']}")
     try:
         cmd_raw = event["text"].split(" ")
         cmd = cmd_raw[1]

@@ -54,7 +54,7 @@ async def check_channel(app: AsyncApp, channel_id: str):
                 channel=channel["id"],
             )
             if api_result["channel"]["topic"]["value"] != TOPIC:
-                logger.info(f"Updated channel #{channel["name"]} topic")
+                logger.info(f"Updated channel #{channel['name']} topic")
                 api_result = await app.client.conversations_setTopic(
                     channel=channel["id"],
                     topic=TOPIC
@@ -80,7 +80,7 @@ async def validate_task(app: AsyncApp, task: dict) -> bool:
         if r not in task.keys():
             raise KeyError(f"Missing required field '{r}'")
     if task["parser"] not in PARSERS.keys():
-        raise KeyError(f"Unknown parser {task["parser"]}. Valid parsers are {PARSERS.keys()}.")
+        raise KeyError(f"Unknown parser {task['parser']}. Valid parsers are {PARSERS.keys()}.")
     if not isinstance(task["delay"], int):
         raise TypeError("Delay must be of type int.")
     # Check file exists
