@@ -24,11 +24,11 @@ from .commands import SYSTEM_COMMANDS
 
 app = AsyncApp(token=os.environ["SLACK_BOT_TOKEN"], process_before_response=True)
 
+__VERSION__ = "0.0.7"
+
 ## Bot commands
 
 logs_running = False
-
-
 async def logs(*args):
     """Process the logs command"""
     global logs_running
@@ -52,7 +52,7 @@ async def logs(*args):
 
 
 async def help(*args):
-    """Returns all available commands."""
+    """Returns all available commands"""
     msg = (":bulb: *Usage* @BOT [COMMAND] (args)\n_System commands_\n"
            + "\n- ".join([f"`{c}`: {SYSTEM_COMMANDS[c].__doc__}" for c in SYSTEM_COMMANDS.keys()])
            + "\n_Bot commands_\n"
@@ -61,9 +61,15 @@ async def help(*args):
     return msg
 
 
+async def version(*args):
+    """Returns the current version"""
+    return "Geologs version " + __VERSION__ + ". See https://github.com/gyndlf/geologs"
+
+
 BOT_COMMANDS = {
     "logs": logs,
     "help": help,
+    "version": version,
 }
 
 
