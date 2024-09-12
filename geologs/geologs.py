@@ -17,6 +17,7 @@ import tomllib
 from slack_bolt.app.async_app import AsyncApp
 from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
 import asyncio
+import re
 
 # Local imports
 from . import watch_logs
@@ -25,6 +26,7 @@ from .commands import SYSTEM_COMMANDS
 app = AsyncApp(token=os.environ["SLACK_BOT_TOKEN"], process_before_response=True)
 
 __VERSION__ = "0.0.7"
+USERNAME = ""  # populated by who_am_i
 
 ## Bot commands
 
@@ -73,23 +75,44 @@ BOT_COMMANDS = {
 }
 
 
+async def who_am_i(app: AsyncApp):
+    global USERNAME
+    api_result = await app.client.auth_test()
+    if "user" in api_result.data:
+        USERNAME = api_result["user_id"]
+        logger.info(f"Slack username: {api_result['user']} ({USERNAME})")
+    else:
+        raise RuntimeError("Could not determine bot username")
+
+
+async def get_if_reacted(channel, timestamp) -> bool:
+    """Return if the current bot has reacted to this message."""
+    api_response = await app.client.reactions_get(channel=channel, timestamp=timestamp)
+    if "reactions" in api_response["message"].keys():
+        for emoji in api_response["message"]["reactions"]:
+            if USERNAME in emoji["users"]:  # check if we have personally reacted
+                return True
+    return False
+
+
+def remove_other_mentions(command: str) -> str:
+    """Remove all other bot mentions from the string to call multiple bots."""
+    return re.sub(r"<.*?>", "", command).strip()
+
+
 @app.event("app_mention")
 async def handle_mentions(event, client, say):  # async function
     # Check if reacted (and so already has been processed)
-    api_response = await client.reactions_get(
-        channel=event["channel"],
-        timestamp=event["ts"]
-    )
-    if "reactions" in api_response["message"].keys():
-        logger.info(f"Already responded to mention: {event['text']}")
+    if await get_if_reacted(event["channel"], event["ts"]):
+        logger.info(f"Already responded to mention.")
         return
 
     logger.info(f"Bot mentioned: {event['text']}")
     try:
-        cmd_raw = event["text"].split(" ")
-        cmd = cmd_raw[1]
-        if len(cmd_raw) > 2:
-            cmds = cmd_raw[2:]
+        cmd_raw = remove_other_mentions(event["text"]).split(" ")
+        cmd = cmd_raw[0]
+        if len(cmd_raw) > 1:
+            cmds = cmd_raw[1:]
         else:
             cmds = []
     except IndexError:
@@ -143,6 +166,7 @@ async def handle_mentions(event, client, say):  # async function
 async def main_async():
     #setup_tasks(config)
     handler = AsyncSocketModeHandler(app, os.environ["SLACK_APP_TOKEN"])
+    await who_am_i(app)  # load the bot username
     await handler.start_async()
 
 
