@@ -1,11 +1,11 @@
 [testing]
 channel = "#tephrite"
 logfile = "test.log"
-delay = 10
+delay = 5
 parser = "basic"
 
 [test2]
 channel = "#rocks-are-cool"
-logfile = "test.log"
+logcmd = "tail -f test.log"
 delay = 5
 parser = "basic"

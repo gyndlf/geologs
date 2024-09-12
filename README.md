@@ -30,15 +30,15 @@ Available parsers can be found in `geologs/parsers.py` to format the logs in a p
 
 ```toml
 [testing]
-channel = "#tephrite"
+channel = "#file-logs"
 logfile = "test.log"
 delay = 10
 parser = "basic"
 
 [test2]
-channel = "#rocks-are-cool"
-logfile = "test.log"
+channel = "#ssh-logins"
+logcmd = "journalctl -u sshd --no-pager -f"
 delay = 5
-parser = "basic"
+parser = "ssh"
 ```
 
