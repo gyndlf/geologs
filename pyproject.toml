@@ -8,7 +8,7 @@ authors = [
     {name = "gyndlf", email = "james@zingel.co.nz"},
 ]
 readme = "README.md"
-version = "0.0.6"
+version = "0.0.7"  # Make sure __VERSION__ in geologs.py matches
 license = {text = "MIT"}
 keywords = ["slack", "log", "bot"]
 description = "Slack bot to watch log files and run basic server commands"
