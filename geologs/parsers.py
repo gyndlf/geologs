@@ -41,9 +41,24 @@ def monty(message: str) -> str:
         return _log_level_to_emoji(comps[2]) + " ".join(comps[3:])
 
 
+def ssh(message: str) -> str:
+    """Parse message from sshd."""
+    comps = message.split(" ")
+    if "accepted publickey" in message.lower():
+        # Confirmation of public key
+        return ":key: " + " ".join(comps[6:13])
+    elif "session opened" in message.lower():
+        # Creation of a new session
+        return ":satellite_antenna: " + " ".join(comps[6:])
+    else:
+        return message
+
+
+
 PARSERS = {
     "basic": basic,
     "monty": monty,
+    "ssh": ssh,
 }
 
 

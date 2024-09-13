@@ -25,7 +25,7 @@ from .commands import SYSTEM_COMMANDS
 
 app = AsyncApp(token=os.environ["SLACK_BOT_TOKEN"], process_before_response=True)
 
-__VERSION__ = "0.0.7"
+__VERSION__ = "0.0.8"
 USERNAME = ""  # populated by who_am_i
 
 ## Bot commands
