@@ -46,10 +46,10 @@ def ssh(message: str) -> str:
     comps = message.split(" ")
     if "accepted publickey" in message.lower():
         # Confirmation of public key
-        return ":key: " + " ".join(comps[6:13])
+        return ":key: " + " ".join(comps[5:13])
     elif "session opened" in message.lower():
         # Creation of a new session
-        return ":satellite_antenna: " + " ".join(comps[6:])
+        return ":satellite_antenna: " + " ".join(comps[5:])
     else:
         return message
 
@@ -64,3 +64,5 @@ PARSERS = {
 
 if __name__ == "__main__":
     print(monty("[2024-09-10 11:28:44,276] INFO Run finished and took 3 seconds"))
+    print(ssh("Sep 13 06:17:24 hostname sshd[281443]: Accepted publickey for user from 1.1.1.1 port 22 ssh2: RSA SHA256:HASH"))
+    print(ssh("Sep 13 06:17:24 hostname sshd[281443]: pam_unix(sshd:session): session opened for user user(uid=1001) by (uid=0)"))
