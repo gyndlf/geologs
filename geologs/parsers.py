@@ -51,17 +51,21 @@ def ssh(message: str) -> str:
     if "accepted publickey" in message.lower():
         # Confirmation of public key
         icon = " :key: "
+        log = log.split("ssh2")[0]  # ignore the RSA key part
     elif "session opened" in message.lower():
         # Creation of a new session
         icon = " :satellite_antenna: "
     elif "error: kex_exchange_identification" in message.lower():
         # Probably malicious port scanning
         icon = " :warning: "
+    elif "connection closed" in message.lower():
+        # Ended session
+        icon = " :heart_hands: "
     elif "invalid format" in message.lower():
         # Most likely someone using HTTP scanning
         icon = " :military_helmet: "
 
-    return date + icon + log
+    return "[" + date + "] " + icon + log
 
 
 PARSERS = {
@@ -73,7 +77,10 @@ PARSERS = {
 
 if __name__ == "__main__":
     print(monty("[2024-09-10 11:28:44,276] INFO Run finished and took 3 seconds"))
-    print(ssh("Sep 13 06:17:24 hostname sshd[281443]: Accepted publickey for user from 1.1.1.1 port 22 ssh2: RSA SHA256:HASH"))
+    print(ssh("Sep 13 06:17:24 hostname sshd[281443]: Accepted publickey for user from 1.1.1.1 port 22 ssh2: RSA SHA256:HASHHASHHASHASHASHSAHASHASHAHSHASHASHSHSH"))
     print(ssh("Sep 13 06:17:24 hostname sshd[281443]: pam_unix(sshd:session): session opened for user user(uid=1001) by (uid=0)"))
     print(ssh("Nov 22 11:08:36 hostname sshd[2700138]: error: kex_exchange_identification: banner line contains invalid characters"))
     print(ssh("Nov 25 06:20:08 hostname sshd[2834581]: banner exchange: Connection from 1.1.1.1 port 10301: invalid format"))
+    print(ssh("Nov 18 11:41:00 hostname sshd[2510081]: error: kex_exchange_identification: client sent invalid protocol identifier GET / HTTP/1.1"))
+    print(ssh("Nov 18 11:41:00 hostname sshd[2510080]: error: kex_exchange_identification: Connection closed by remote host"))
+    print(ssh("Nov 18 11:41:00 hostname sshd[2510080]: Connection closed by 1.1.1.1 port 10000"))
