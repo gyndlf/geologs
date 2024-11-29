@@ -64,7 +64,6 @@ def ssh(message: str) -> str:
     return date + icon + log
 
 
-
 PARSERS = {
     "basic": basic,
     "monty": monty,
