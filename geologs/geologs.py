@@ -34,23 +34,13 @@ logs_running = False
 async def logs(*args):
     """Process the logs command"""
     global logs_running
-    sub_cmds = "Subcommands of `install` and `check``"
-    if len(args) == 0:
-        if logs_running:
-            return ":white_check_mark: Running. " + sub_cmds
-        else:
-            return ":skull: Not running. " + sub_cmds
-    elif args[0] == "install":
+    if logs_running:
+        return ":white_check_mark: Loggers are running."
+    else:
         # Install the watchers
-        if logs_running:
-            return "Loggers already running"
         await watch_logs.setup_tasks(app, config)
         logs_running = True
         return "Loggers running"
-    elif args[0] == "check":
-        return "unimplemented"
-    else:
-        return "Unknown command. " + sub_cmds
 
 
 async def help(*args):
