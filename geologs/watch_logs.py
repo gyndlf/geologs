@@ -12,7 +12,7 @@ from typing import Callable
 import os
 import logging
 from slack_bolt.app.async_app import AsyncApp
-import subprocess
+
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ from .parsers import PARSERS
 
 
 # Channel topic to set
-TOPIC = "Listening to logs! (Rock music :notes:)"
+TOPIC = "Listening to logs! :notes:"
 
 
 async def watch_file(app: AsyncApp, fname: str, channel_id: str, delay: int, parser: Callable[[str], str]):
@@ -47,27 +47,25 @@ async def watch_file(app: AsyncApp, fname: str, channel_id: str, delay: int, par
 
 
 async def watch_process(app: AsyncApp, cmd: str, channel_id: str, delay: int, parser: Callable[[str], str]):
-    """Start a loop to open a new process and send a message for new line"""
+    """Start a process and parse the output as a message to a specific channel"""
     # Open the process
-    p = subprocess.Popen(
-        cmd.split(),  # split into keywords
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT  # redirect to capture too
+    proc = await asyncio.create_subprocess_exec(
+        *cmd.split(),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
     )
 
-    while True:  # loop asynchronously
-        # returns None while subprocess is running
-        retcode = p.poll()
-        line = p.stdout.readline().decode('utf-8').strip()
-        if not line:
-            await asyncio.sleep(delay)
-        else:
-            logger.info(f"Log '{cmd}' updated, sending '{line}'")
+    while True:
+        stdout_data = await proc.stdout.readline()
+        stdout = stdout_data.decode('utf-8').strip()
+
+        if stdout:
+            logger.info(f"Log '{cmd}' updated, sending '{stdout}'")
             await app.client.chat_postMessage(
                 channel=channel_id,
-                text=parser(line),
+                text=parser(stdout),
             )
-        if retcode is not None:  # command finished executing
+        if proc.returncode is not None:
             logger.info("Command finished.")
             break
 

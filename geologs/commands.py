@@ -47,6 +47,11 @@ async def ping(*args) -> str:
     return await _run_cmd('ping', '-c 4', ip, code_block=True)
 
 
+async def users(*args) -> str:
+    """List all users logged in"""
+    return await _run_cmd('users', code_block=True)
+
+
 async def logins(*args) -> str:
     """List the last 10 logins (or terminal sessions)"""
     return await _run_cmd('head', stdin=await _run_cmd('last'), code_block=True)
@@ -70,6 +75,7 @@ SYSTEM_COMMANDS = {
     "logins": logins,
     "ip": ip,
     "throws": throws,
+    "users": users,
 }
 
 if __name__ == "__main__":
